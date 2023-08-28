@@ -5,13 +5,13 @@
 #include <ESP8266WiFiMulti.h>
 ESP8266WiFiMulti WiFiMulti;
 
-const char* ssid = "ESP8266-Access-Point";
-const char* password = "123456789";
+const char *ssid = "ESP8266-Access-Point";
+const char *password = "123456789";
 
-//Your IP address or domain name with URL path
-const char* serverNameTemp = "http://192.168.4.1/temp";
-const char* serverNameHumi = "http://192.168.4.1/humi";
-const char* serverNamePres = "http://192.168.4.1/pres";
+// Your IP address or domain name with URL path
+const char *serverNameTemp = "http://192.168.4.1/temp";
+const char *serverNameHumi = "http://192.168.4.1/humi";
+const char *serverNamePres = "http://192.168.4.1/pres";
 
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -21,7 +21,7 @@ const char* serverNamePres = "http://192.168.4.1/pres";
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define OLED_RESET -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 String temperature;
@@ -29,25 +29,29 @@ String humidity;
 String pressure;
 
 unsigned long previousMillis = 0;
-const long interval = 5000; 
+const long interval = 5000;
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   Serial.println();
-  pinMode(0,OUTPUT);
-  
+  pinMode(0, OUTPUT);
+
   // Address 0x3C for 128x64, you might need to change this value (use an I2C scanner)
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+  {
     Serial.println(F("SSD1306 allocation failed"));
-    for(;;); // Don't proceed, loop forever
+    for (;;)
+      ; // Don't proceed, loop forever
   }
   display.clearDisplay();
   display.setTextColor(WHITE);
- 
+
   Serial.print("Connecting to ");
   Serial.println(ssid);
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
   }
@@ -55,24 +59,27 @@ void setup() {
   Serial.println("Connected to WiFi");
 }
 
-String httpGETRequest(const char* serverName) {
+String httpGETRequest(const char *serverName)
+{
   WiFiClient client;
   HTTPClient http;
-    
-  // Your IP address with path or Domain name with URL path 
+
+  // Your IP address with path or Domain name with URL path
   http.begin(client, serverName);
-  
+
   // Send HTTP POST request
   int httpResponseCode = http.GET();
-  
-  String payload = "--"; 
-  
-  if (httpResponseCode>0) {
+
+  String payload = "--";
+
+  if (httpResponseCode > 0)
+  {
     Serial.print("HTTP Response code: ");
     Serial.println(httpResponseCode);
     payload = http.getString();
   }
-  else {
+  else
+  {
     Serial.print("Error code: ");
     Serial.println(httpResponseCode);
   }
@@ -82,62 +89,74 @@ String httpGETRequest(const char* serverName) {
   return payload;
 }
 
-void loop() {
+void loop()
+{
   unsigned long currentMillis = millis();
-  
-  if(currentMillis - previousMillis >= interval) {
-     // Check WiFi connection status
-    if ((WiFiMulti.run() == WL_CONNECTED)) {
+
+  if (currentMillis - previousMillis >= interval)
+  {
+    // Check WiFi connection status
+    if ((WiFiMulti.run() == WL_CONNECTED))
+    {
       temperature = httpGETRequest(serverNameTemp);
       humidity = httpGETRequest(serverNameHumi);
       pressure = httpGETRequest(serverNamePres);
       Serial.println("Temperature: " + temperature + " *C - Humidity: " + humidity + " % - Pressure: " + pressure + " hPa");
 
-      //如果温度大于25度，则灯泡点亮，否则，熄灭。
+      // 如果温度大于25度，则灯泡点亮，否则，熄灭。
 
-      if(temperature.toInt()>25){
-        digitalWrite(0,HIGH);
-      }else{
-        digitalWrite(0,LOW);
+      if (temperature.toInt() > 25)
+      {
+        digitalWrite(0, HIGH);
       }
-      
-      display.clearDisplay();
-      
-      // display temperature
-      display.setTextSize(2);
-      display.setCursor(0,0);
-      display.print("T: ");
-      display.print(temperature);
-      display.print(" ");
-      display.setTextSize(1);
-      display.cp437(true);
-      display.write(248);
-      display.setTextSize(2);
-      display.print("C");
-      
-      // display humidity
-      display.setTextSize(2);
-      display.setCursor(0, 25);
-      display.print("H: ");
-      display.print(humidity);
-      display.print(" %"); 
-      
-      // display pressure
-      display.setTextSize(2);
-      display.setCursor(0, 50);
-      display.print("P:");
-      display.print(pressure);
-      display.setTextSize(1);
-      display.setCursor(110, 56);
-      display.print("hPa");
-           
-      display.display();
-      
+      else
+      {
+        digitalWrite(0, LOW);
+      }
+
+      LED_Display(temperature, humidity, pressure);
+
       // save the last HTTP GET Request
       previousMillis = currentMillis;
     }
-    else {
+    else
+    {
       Serial.println("WiFi Disconnected");
     }
   }
+}
+
+void LED_Display(String temperature, String humidity, String pressure)
+{
+  display.clearDisplay();
+
+  // display temperature
+  display.setTextSize(2);
+  display.setCursor(0, 0);
+  display.print("T: ");
+  display.print(temperature);
+  display.print(" ");
+  display.setTextSize(1);
+  display.cp437(true);
+  display.write(248);
+  display.setTextSize(2);
+  display.print("C");
+
+  // display humidity
+  display.setTextSize(2);
+  display.setCursor(0, 25);
+  display.print("H: ");
+  display.print(humidity);
+  display.print(" %");
+
+  // display pressure
+  display.setTextSize(2);
+  display.setCursor(0, 50);
+  display.print("P:");
+  display.print(pressure);
+  display.setTextSize(1);
+  display.setCursor(110, 56);
+  display.print("hPa");
+
+  display.display();
 }
